@@ -11,6 +11,8 @@
  ate up CR2032s, sorta kinda worked some of the time, and had pretty low quality assembly. Did I mention it goes for $100?!
  We have the technology. We can make it better!
  
+ To use this code you must configure the ATtiny to run at 8MHz so that serial and other parts of the code work correctly.
+ 
  We take a series of readings of the water sensor at power up. We then wait for a deviation of more than
  100 from the average before triggering the alarm.
  
