@@ -31,15 +31,16 @@
 SoftwareSerial mySerial(4, 3); // RX, TX
 
 //Pin definitions for regular Arduino Uno (used during development)
-/*const byte buzzer1 = 8;const byte buzzer2 = 9;
+/*const byte buzzer1 = 8;
+const byte buzzer2 = 9;
 const byte statLED = 10;
 const byte waterSensor = A0;*/
 
-//Pin definitions for actual ATtiny
+//Pin definitions for ATtiny
 const byte buzzer1 = 0;
 const byte buzzer2 = 1;
 const byte statLED = 4;
-const byte waterSensor = A1;//2;
+const byte waterSensor = A1;
 
 //Variables
 
@@ -54,8 +55,8 @@ void setup()
   pinMode(buzzer2, OUTPUT);
   pinMode(statLED, OUTPUT);
 
-//  pinMode(waterSensor, INPUT_PULLUP);
-  pinMode(2, INPUT);
+  //pinMode(waterSensor, INPUT_PULLUP);
+  pinMode(2, INPUT); //When setting the pin mode we have to use 2 instead of A1
   digitalWrite(2, HIGH); //Hack for getting around INPUT_PULLUP
   
   mySerial.begin(9600);
@@ -85,12 +86,6 @@ void setup()
   delay(100);
   alarmSound();
   
-  /*while(1){
-    digitalWrite(statLED, HIGH);
-    delay(250);
-    digitalWrite(statLED, LOW);
-    delay(250);
-  }*/
 }
 
 void loop() 
@@ -131,8 +126,8 @@ void loop()
   delay(100);
 }
 
-// This is just a unique (annoying) sound we came up with, there is no magic to it
-// Comes from the Simon Says game/kit actually
+//This is just a unique (annoying) sound we came up with, there is no magic to it
+//Comes from the Simon Says game/kit actually: https://www.sparkfun.com/products/10547
 //250us to 79us
 void alarmSound(void)
 {
@@ -144,21 +139,10 @@ void alarmSound(void)
       digitalWrite(buzzer2, HIGH);
       digitalWrite(buzzer1, LOW);
       delayMicroseconds(x);
-      //microDelay(x);
 
       digitalWrite(buzzer2, LOW);
       digitalWrite(buzzer1, HIGH);
       delayMicroseconds(x);
-      //microDelay(x);
     }
   }
-}
-
-//It turns out Arduino IDE v1.0.3 doesn't support 1MHz delayMicroseconds: 
-//https://github.com/damellis/attiny/issues/12
-//So we're going to fake it with nops()
-void microDelay(byte amount)
-{
-  for(byte x = 0 ; x < amount ; x++)
-    __asm__("nop\n\t");
 }
