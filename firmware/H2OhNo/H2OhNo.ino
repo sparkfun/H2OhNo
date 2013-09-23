@@ -6,7 +6,7 @@
  This code is public domain but you buy me a beer if you use this and we meet someday (Beerware license).
  
  When the ATtiny senses water between two pins, go crazy. Make noise, blink LED.
-
+ 
  Created to replace the water sensor in my Nauticam 17401 underwater enclosure. The original board
  ate up CR2032s, sorta kinda worked some of the time, and had pretty low quality assembly. Did I mention it goes for $100?!
  We have the technology. We can make it better!
@@ -24,7 +24,7 @@
  
  This firmware doesn't yet put any power savings in place but should be possible (wake up every few second and take measurement).
  
-*/
+ */
 
 #include <SoftwareSerial.h>
 
@@ -32,9 +32,9 @@ SoftwareSerial mySerial(4, 3); // RX, TX
 
 //Pin definitions for regular Arduino Uno (used during development)
 /*const byte buzzer1 = 8;
-const byte buzzer2 = 9;
-const byte statLED = 10;
-const byte waterSensor = A0;*/
+ const byte buzzer2 = 9;
+ const byte statLED = 10;
+ const byte waterSensor = A0;*/
 
 //Pin definitions for ATtiny
 const byte buzzer1 = 0;
@@ -58,10 +58,10 @@ void setup()
   //pinMode(waterSensor, INPUT_PULLUP);
   pinMode(2, INPUT); //When setting the pin mode we have to use 2 instead of A1
   digitalWrite(2, HIGH); //Hack for getting around INPUT_PULLUP
-  
+
   mySerial.begin(9600);
   mySerial.println("H2Ohno!");
-  
+
   //Take a series of readings from the water sensor and average them
   waterAvg = 0;
   for(int x = 0 ; x < 8 ; x++)
@@ -77,7 +77,7 @@ void setup()
     delay(50);
   }
   waterAvg /= 8;
-  
+
   mySerial.print("Avg: ");
   mySerial.println(waterAvg);
 
@@ -85,14 +85,15 @@ void setup()
   alarmSound();
   delay(100);
   alarmSound();
-  
+
+  digitalWrite(statLED, LOW);
 }
 
 void loop() 
 {
   //Check for water
   int waterDifference = abs(analogRead(waterSensor) - waterAvg);
-  
+
   if(waterDifference > maxDifference) //Ahhh! Water! Alarm!
   {
     long startTime = millis(); //Record the current time
@@ -107,22 +108,22 @@ void loop()
       if(millis() - timeSinceBlink > 100) //Toggle the LED every 100ms
       {
         timeSinceBlink = millis();
-        
+
         if(digitalRead(statLED) == LOW) 
           digitalWrite(statLED, HIGH);
         else
           digitalWrite(statLED, LOW);
       }
-      
+
       waterDifference = abs(analogRead(waterSensor) - waterAvg); //Take a new reading
-  
-      mySerial.print("Read: ");
+
+        mySerial.print("Read: ");
       mySerial.println(analogRead(waterSensor));
     } //Loop until we don't detect water AND 2 seconds of alarm have completed
-    
+
     digitalWrite(statLED, LOW); //No more alarm. Turn off LED
   }
-    
+
   delay(100);
 }
 
@@ -146,3 +147,4 @@ void alarmSound(void)
     }
   }
 }
+
