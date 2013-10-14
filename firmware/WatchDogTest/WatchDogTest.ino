@@ -11,7 +11,14 @@
  ate up CR2032s, sorta kinda worked some of the time, and had pretty low quality assembly. Did I mention it goes for $100?!
  We have the technology. We can make it better!
  
- To use this code you must configure the ATtiny to run at 8MHz so that serial and other parts of the code work correctly.
+ You will need to have ATtiny supported for Arduino installed. See http://hlt.media.mit.edu/?p=1695 for more info.
+ 
+ You will need to configure the ATtiny to run at 8MHz so that serial and other parts of the code work correctly.
+ See "Configuring the ATtiny to run at 8MHz" on http://hlt.media.mit.edu/?p=1695 for more info.
+ 
+ To program:
+ Select USBtinyISP from the programmer menu (we recommend AVR Tiny Programmer https://www.sparkfun.com/products/11460)
+ Select ATtiny85 w/ Internal 8MHz from the board menu
  
  We take a series of readings of the water sensor at power up. We then wait for a deviation of more than
  100 from the average before triggering the alarm.
@@ -22,24 +29,18 @@
  In alarm mode: ~30mA with LED on and making sound
  Off: 10nA. Really? Wow. 
  
- This firmware uses some power saving to get the average consumption down to ~50uA average. With a CR2032 @ 200mAh 
- this should allow it to run for 4,000hrs or 166 days. This is easily extended by increasing the amount of time
- between water checks (currently 1 per second).
+ This firmware doesn't yet put any power savings in place but should be possible (wake up every few second and take measurement).
+ 
+ Currently uses 12.2mA in idle.
+ Now down to 0.005mA.
  
  */
 
 #include <avr/sleep.h> //Needed for sleep_mode
-#include <avr/wdt.h> //Needed to enable/disable watch dog timer
 
 #include <SoftwareSerial.h>
 
 SoftwareSerial mySerial(4, 3); // RX, TX
-
-//Pin definitions for regular Arduino Uno (used during development)
-/*const byte buzzer1 = 8;
- const byte buzzer2 = 9;
- const byte statLED = 10;
- const byte waterSensor = A0;*/
 
 //Pin definitions for ATtiny
 const byte buzzer1 = 0;
@@ -54,9 +55,11 @@ const byte waterSensor = A1;
 int waterAvg = 0; 
 int maxDifference = 100; //A diff of more than 100 in the analog value will trigger the system.
 
+volatile int watchdog_counter;
+
 //This runs each time the watch dog wakes us up from sleep
 ISR(WDT_vect) {
-  //Don't do anything. This is just here so that we wake up.
+  watchdog_counter++;
 }
 
 void setup()
@@ -72,25 +75,6 @@ void setup()
   mySerial.begin(9600);
   mySerial.println("H2Ohno!");
 
-  //Take a series of readings from the water sensor and average them
-  waterAvg = 0;
-  for(int x = 0 ; x < 8 ; x++)
-  {
-    waterAvg += analogRead(waterSensor);
-
-    //During power up, blink the LED to let the world know we're alive
-    if(digitalRead(statLED) == LOW)
-      digitalWrite(statLED, HIGH);
-    else
-      digitalWrite(statLED, LOW);
-
-    delay(50);
-  }
-  waterAvg /= 8;
-
-  mySerial.print("Avg: ");
-  mySerial.println(waterAvg);
-
   //During power up, beep the buzzer to verify function
   alarmSound();
   delay(100);
@@ -100,59 +84,28 @@ void setup()
   digitalWrite(buzzer2, LOW);
   digitalWrite(statLED, LOW);
 
+  watchdog_counter = 0;
+
   //Power down various bits of hardware to lower power usage  
   set_sleep_mode(SLEEP_MODE_PWR_DOWN); //Power down everything, wake up from WDT
   sleep_enable();
-
+  ADCSRA &= ~(1<<ADEN); //Disable ADC, saves ~230uA
+  
+  setup_watchdog(3); //Wake up after 128 msec
 }
 
 void loop() 
 {
-  ADCSRA &= ~(1<<ADEN); //Disable ADC, saves ~230uA
-  setup_watchdog(6); //Wake up after 1sec
-  sleep_mode(); //Go to sleep! Wake up 1sec later and check water
+  sleep_mode(); //Go to sleep!
 
-  //Check for water
-  ADCSRA |= (1<<ADEN); //Enable ADC
-  int waterDifference = abs(analogRead(waterSensor) - waterAvg);
-  mySerial.print("Diff: ");
-  mySerial.println(waterDifference);
-
-  if(waterDifference > maxDifference) //Ahhh! Water! Alarm!
+  if(watchdog_counter > 30)
   {
-    wdt_disable(); //Turn off the WDT!!
-    
-    long startTime = millis(); //Record the current time
-    long timeSinceBlink = millis(); //Record the current time for blinking
-    digitalWrite(statLED, HIGH); //Start out with the uh-oh LED on
+    watchdog_counter = 0;
 
-    //Loop until we don't detect water AND 2 seconds of alarm have completed
-    while(waterDifference > maxDifference || (millis() - startTime) < 2000)
-    {
-      alarmSound(); //Make noise!!
-
-      if(millis() - timeSinceBlink > 100) //Toggle the LED every 100ms
-      {
-        timeSinceBlink = millis();
-
-        if(digitalRead(statLED) == LOW) 
-          digitalWrite(statLED, HIGH);
-        else
-          digitalWrite(statLED, LOW);
-      }
-
-      waterDifference = abs(analogRead(waterSensor) - waterAvg); //Take a new reading
-
-      mySerial.print("Read: ");
-      mySerial.println(analogRead(waterSensor));
-    } //Loop until we don't detect water AND 2 seconds of alarm have completed
-
+    alarmSound(); //Make noise!!
     digitalWrite(buzzer1, LOW);
     digitalWrite(buzzer2, LOW);
-    digitalWrite(statLED, LOW); //No more alarm. Turn off LED
   }
-  
-
 }
 
 //This is just a unique (annoying) sound we came up with, there is no magic to it
@@ -176,13 +129,12 @@ void alarmSound(void)
   }
 }
 
-//Sets the watchdog timer to wake us up, but not reset
-//0=16ms, 1=32ms, 2=64ms, 3=128ms, 4=250ms, 5=500ms
-//6=1sec, 7=2sec, 8=4sec, 9=8sec
-//From: http://interface.khm.de/index.php/lab/experiments/sleep_watchdog_battery/
+// 0=16ms, 1=32ms, 2=64ms, 3=128ms, 4=250ms, 5=500ms
+// 6=1sec, 7=2sec, 8=4sec, 9=8sec
+// From: http://interface.khm.de/index.php/lab/experiments/sleep_watchdog_battery/
 void setup_watchdog(int timerPrescaler) {
 
-  if (timerPrescaler > 9 ) timerPrescaler = 9; //Limit incoming amount to legal settings
+  if (timerPrescaler > 9 ) timerPrescaler = 9; //Correct incoming amount if need be
 
   byte bb = timerPrescaler & 7; 
   if (timerPrescaler > 7) bb |= (1<<5); //Set the special 5th bit if necessary
