@@ -14,11 +14,10 @@
 
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(0, 1); // RX, TX
+SoftwareSerial mySerial(1, 0); // RX, TX
 
 void setup()
 {
-  pinMode(analog1, INPUT);
   mySerial.begin(9600);
 }
 
