@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.5.0">
+<eagle version="6.4">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -8895,6 +8895,7 @@ Works with Tiny AVR Programmer v1.3 and greater.
 Pinout aligns with FTDI Basic for serial debugging.</text>
 <text x="66.548" y="120.396" size="1.778" layer="97">TXO</text>
 <text x="67.056" y="123.19" size="1.778" layer="97">RXI</text>
+<text x="238.76" y="7.62" size="2.54" layer="97">v1.2</text>
 </plain>
 <instances>
 <instance part="U$1" gate="G$1" x="241.3" y="17.78"/>
