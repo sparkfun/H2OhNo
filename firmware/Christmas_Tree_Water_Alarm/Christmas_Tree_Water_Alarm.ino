@@ -82,11 +82,12 @@ void setup()
   mySerial.print("Avg: ");
   mySerial.println(waterAvg);
 
+  digitalWrite(statLED, HIGH);
+  playJingleBells();
+
   digitalWrite(buzzer1, LOW);
   digitalWrite(buzzer2, LOW);
   digitalWrite(statLED, LOW);
-
-  playJingleBells();
 
   //Power down various bits of hardware to lower power usage  
   set_sleep_mode(SLEEP_MODE_PWR_DOWN); //Power down everything, wake up from WDT
@@ -156,11 +157,11 @@ void setup_watchdog(int timerPrescaler) {
 
 //From http://micahelsprofessionalportfolio.blogspot.com/2012/11/arduino-challenge-jingle-bells.html
 //Note: On the ATtiny you have to pull arrays out of functions otherwise you get compile/pointer errors
-char notes[] = "eeeeeeegcde "; // a space represents a rest
+char notes[] = "eeeeeeegcde"; // a space represents a rest
 int beats[] = { 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 4};
 void playJingleBells()
 {
-  int length = 15; // the number of notes
+  int length = 11; // the number of notes
   int tempo = 100;
 
   for (char i = 0; i < length; i++)
