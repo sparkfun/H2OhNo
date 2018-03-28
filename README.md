@@ -1,3 +1,7 @@
+
+**Note:Retired Product**
+This product has been retired from our catalog and is no longer for sale. This page is made available for those looking for datasheets and the simply curious.
+
 H2OhNo
 ======
 
