@@ -17,6 +17,12 @@ Repository Contents
 
 * **/Firmware** - Example firmware for running the sensor
 * **/Hardware** - All Eagle design files (.brd, .sch)
+
+
+Documentation
+-------------------
+* **[Hookup Guide](https://learn.sparkfun.com/tutorials/h2ohno)** - Basic hookup guide for the H2OhNo
+
  
 License Information
 -------------------
